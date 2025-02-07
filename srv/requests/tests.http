@@ -1,0 +1,25 @@
+###
+# @name IncidentsCreate
+
+POST http://localhost:4004/service/ProcessorService/Incidents
+Content-Type: application/json
+
+{
+  "title": "New incident",
+  "customer_ID": "1001039"
+}
+
+###
+@id = {{IncidentsCreate.response.body.$.ID}}
+
+POST http://localhost:4004/service/ProcessorService/Incidents(ID={{id}},IsActiveEntity=false)/draftActivate
+Content-Type: application/json
+
+###
+PUT http://localhost:4004/odata/v4/api-business-partner/A_BusinessPartner/1001039
+Authorization: Basic carol:
+Content-Type: application/json
+
+{
+  "BusinessPartnerFullName": "Catherine Cloudy"
+}

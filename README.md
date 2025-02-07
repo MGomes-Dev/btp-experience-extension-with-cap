@@ -115,6 +115,10 @@ Você será direcionado para o SAP Business Application Studio, na visão Storyb
 
 ### 2.2 Criando a entidade *Incidents*
 
+Nessa aula vamos criar a nossa primeira [entidade](https://cap.cloud.sap/docs/cds/cdl#entities).
+
+Entidades são estruturas com elementos nomeados e de tipos definidos, representando conjuntos de dados (persistidos) que podem ser lidos e manipulados usando operações CRUD usuais.
+
 Na seção Data Models, escolha a opção de criar uma nova entidade. Como é a primeira entidade criada, a ferramenta solicitará a definição de um namespace. Mantenha o valor padrão já preenchido (incidents_mgt) e escolha a opção create.
 <br>![Create Entity](/assets/2.2.1.create-entity.png)
 
@@ -158,6 +162,8 @@ Na aba "Aspects" selecione os aspectos que acabamos de importar.
 
 ### 2.4 Criando a entidade *Conversations*
 
+Um incidente deve conter uma série de mensagens para construir um histórico de conversação, e para isso, vamos criar uma nova entidade.
+
 Adicione uma nova entidade apertando o botão "Add Entity".
 <br>![Add Entity](/assets/2.4.1.add-entity.png)
 
@@ -185,6 +191,8 @@ Após selecionar *OK*, as entidades estarão relacionadas.
 
 ### 2.5 Criando as entidades *Status* e *Urgency*
 
+Os incidentes deverão ter mais dois campos `status` e `urgency`, que são *code lists*, ou seja, dados de configuração.
+
 Repetindo os passos anteriores, importe o aspecto pré-construído `sap.common.CodeList`.
 
 Adicione uma nova entidade chamada `Status` e ative nela o aspecto `sap.common.CodeList`.
@@ -209,6 +217,8 @@ As entidades nesse momento devem apresentar a seguinte configuração:
 ---
 
 ### 2.6 Criando um serviço CDS simples
+
+Deve haver uma API para que os usuários da aplicação possam manipular incidentes.
 
 Nós criamos as entidades utilizando CDS. Agora criaremos os serviços que expõem uma entidade para consumo em uma API.
 
@@ -239,6 +249,16 @@ O console apresentará os logs de execução, indicando os arquivos carregados, 
 Para acessar a aplicação, seguro `ctrl` e clique na url indicada no log (na imagem, a utl http://localhost:4004).
 
 Na página de índice, é possível observar todos os *endpoints* e as suas respectivas entidades.
+
+Repare que o caminho da url é `/service/ProcessorService`. Isso ocorre porque na definição do serviço o caminho foi expressamente declarado pela annotation `@path`, como se pode observar nas propriedades do serviço.
+
+Para consultar elas, no *Graphic Modeler* do serviço, navegue para a opção *Open Property Sheet* no canto superior direito.
+<br>![Incidents Property Sheet](/assets/2.7.2.incidents-property-sheet.png)
+
+Na aba annotations poderemos consultar a definição do `@path`:
+<br>![Path Annotation](/assets/2.7.3.path-annotation.png)
+
+A URL $metadata, por sua vez, fornece o documento metada necessário para adoção do protocolo [OData](https://cap.cloud.sap/docs/advanced/odata)
 
 [Voltar para o Início](#build-extensions-with-sap-cloud-application-programming-model-cap)
 <br>
@@ -335,6 +355,10 @@ Ao navegar novamente para o Fiori Preview, note que agora a visualização apres
 
 Por meio das annotations, o framework Fiori Elements interpreta como a tela deve ser renderizada e quais informações devem ser exibidas. As annotations podem ser disponibilizadas em qualquer CDS, e não somente nas localizadas dentro da pasta App.
 
+Inclusive, é possível notar que a coluna `modifiedAt` possui um título pré-configurado. Isso ocorre porque o módulo `common.cds` possui uma *annotation*, na classe `managed`, que personaliza o título a ser exibido, utilizando a anotação `@title`.
+
+Os textos atuais são obtidos de um pacote de recursos que é endereçado com uma chave `{i18n>...}`. Consulte o [guia de localização](https://cap.cloud.sap/docs/guides/i18n) para saber como isso funciona.
+
 Para exemplificar esse recurso, vamos inserir uma annotation na CDS da entidade *Incidents*, atribuindo um título para ela.
 
 Retorne à Visão Storyboard, selecione o Data Model criado, e selecione *Open in Graphical Modeler*. Selecione a entidade Incidents e navegue para a opção *Show Details*.
@@ -378,6 +402,12 @@ class ProcessorService extends LCAPApplicationService {
 }
 ```
 
+Observe como o arquivo `js` tem o mesmo nome do arquivo `cds`. É assim que a estrutura encontra a implementação. Você pode ver isso na saída de `cds watch`, em que nos logs aparece a definição `impl`.
+
+...
+[cds] - serving ProcessorService { path: '/odata/v4/processor', impl: 'srv/processor-service.js' }
+...
+
 Agora você pode testar o funcionamento da lógica. Por meio da interface gráfica, crie um incidente com a palavra *urgent* no nome. O status automaticamente será definido como High.
 
 [Voltar para o Início](#build-extensions-with-sap-cloud-application-programming-model-cap)
@@ -389,6 +419,12 @@ Agora você pode testar o funcionamento da lógica. Por meio da interface gráfi
 ### 2.11 Criando um serviço CDS mais complexo
 
 Vamos criar um serviço CDS que explore mais o potencial que a ferramenta pode oferecer.
+
+No serviço que criamos acima, usamos apenas a forma mínima de uma [projeção CDS](https://cap.cloud.sap/docs/cds/cdl#views-and-projections), que basicamente faz uma exposição de uma entidade à superfície da API.
+
+No entanto, as projeções vão muito além disso e fornecem meios poderosos para expressar consultas para cenários de aplicação específicos.
+
+Quando mapeadas para bancos de dados relacionais, tais projeções são de fato traduzidas para visualizações SQL.
 
 Iremos criar um serviço que limita as informações expostas ao título do incidente e nome do status, além de expor um campo customizado que concatena dois outros campos e informa a quantidade de conversas vinculadas ao incidente, somente para os que tiverem Urgência Alta.
 
@@ -506,7 +542,7 @@ Selecione a entidade `Customers` e navegue para a opção *Show details*. Na aba
 
 Execute no terminal o comando `cds watch`. É possível notar nos logs que os dados da entidade `API_BUSINESS_PARTNER` foram simulados, pois a conexão com o servidor remoto ainda não foi configurada e o Pacote de Integração provê a simulação desses dados.
 
-Em produção seria necessária a conexão com o servidor, pois em produção esses valores simulados não devem ser aplicados.
+O comando `cds watch` roda em 'modo simulado' por padrão. Em produção, isso não acontecerá, pois a aplicação é iniciada com `cds-serve`. Consulte a [documentação](https://cap.cloud.sap/docs/guides/extensibility/composition#testing-locally) para saber como o `cds watch` se vincula aos serviços.
 
 Ao navegar para a aplicação, é possível observar que todas as entidades do serviço encontram-se disponíveis para teste e consulta.
 
@@ -586,7 +622,7 @@ module.exports = {
 
 ### 3.5 Testando com dados vindo do SAP S/4 HANA
 
-Para acessar dados do SAP S/4 HANA, utilizaremos o ambiente sandbox do SAP Business Accelerator Hub.
+Para acessar dados do SAP S/4 HANA, utilizaremos o ambiente sandbox do SAP Business Accelerator Hub. 
 
 Para acessá-lo, será necessária a obtenção de uma chave de API. Acesse o [SAP Business Accelerator Hub](https://api.sap.com/). No canto superior direito, expanda o menu suspenso do perfil e escolha a opção Configurações. O site pode exigir o login na conta SAP antes de disponibilizar essas opções. Na página de configurações, clique no botão *Show API Key* e copie sua chave de API.
 
@@ -597,10 +633,32 @@ cds.requires.API_BUSINESS_PARTNER.[sandbox].credentials.url=https://sandbox.api.
 cds.requires.API_BUSINESS_PARTNER.[sandbox].credentials.headers.APIKey=<Copied API Key>
 ```
 
+Observe o segmento "sandbox" que denota um [perfil de configuração](https://cap.cloud.sap/docs/node.js/cds-env#profiles) chamado `sandbox`. O nome não tem nenhum significado especial, e em seguida veremos como utiliza-lo.
+
 Por fim, mate a execução da aplicação no terminal apertando `ctrl+c` e execute o comando novamente, mas indicando a utilização do perfil `sandbox`:
 `cds watch --profile sandbox`
 
 Nos logs da execução é possível observar que a aplicação conectou-se com o servidor remoto, e não com os dados simulados.
+
+Na página de índice da aplicação, o serviço simulado desapareceu, porque não é mais servido na aplicação. Em vez disso, presume-se que ele esteja executando em um sistema remoto. Através da configuração acima, o sistema sabe como se conectar a ele.
+
+Também é possível observar nos logs a seguintes saídas (devido à variável `DEBUG=remote` do arquivo `.env`):
+```
+...
+[cds] - connect to API_BUSINESS_PARTNER > odata-v2 {
+  url: 'https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/',
+  headers: { APIKey: '...' }
+}
+...
+```
+
+Esta é a solicitação remota enviada pelo framework quando `S4bupa.run(req.query)` é executado. O objeto `req.query` é traduzido de forma transparente para uma consulta OData `$select=BusinessPartner,BusinessPartnerFullName&$top=...&$orderby=....` A solicitação HTTP inteira (concluída pela configuração do URL do sandbox) é então enviada ao sistema remoto com a ajuda do SAP Cloud SDK.
+
+Observe como é simples a execução de consultas remotas. Nenhuma construção manual de consulta OData é necessária, nenhuma configuração de cliente HTTP como autenticação, nenhuma análise de resposta, tratamento de erros, nem problemas com nomes de host conectados, etc.
+
+Consulte a [documentação sobre CQN](https://cap.cloud.sap/docs/cds/cqn) para obter mais informações sobre essas consultas em geral.
+
+Os aplicativos CAP usam o [SAP Cloud SDK](https://sap.github.io/cloud-sdk/) para realizar a conexão HTTP. O SAP Cloud SDK abstrai fluxos de autenticação e comunicação com [connectivity, destination, and authentication](https://sap.github.io/cloud-sdk/docs/js/features/connectivity/destinations) do SAP BTP. Não importa se você deseja se conectar à nuvem ou a sistemas locais.
 
 Por fim, na aplicação, é possível navegar para a entidade `Customers` e observar os dados recepcionados do SAP S/4 HANA.
 
@@ -828,6 +886,10 @@ Para testar a aplicação, é possível criar um incidente e selecionar um `Cust
 
 ## 4. Lidando com Replicações e Eventos
 
+Na lista de incidentes, a aplicação deve exibir dados do cliente (remotos) juntamente com dados de incidentes (locais da aplicação).
+
+Isso levanta um problema de desempenho: ao mostrar potencialmente centenas de incidentes, o aplicativo deve chegar ao sistema remoto? Ou apenas para registros únicos, para todos os registros de uma vez ou para um conjunto de registros?
+
 Neste exercício, vamos incluir a funcionalidade de replicar dados do sistema remoto para a nossa aplicação.
 
 O cenário ficará assim:
@@ -839,7 +901,7 @@ O cenário ficará assim:
 
 Para isso, precisaremos tornar a entidade `Customer` persistente na nossa aplicação.
 
-Na aba Storyboard, selecione o Dta Model e navegue para a opção *Open In Graphic Modeler*. Selecione a entidade `Customers` e na aba *Annotations* inclua a annotation `cds.persistence.table` na entidade.
+Na aba Storyboard, selecione o Dta Model e navegue para a opção *Open In Graphic Modeler*. Selecione a entidade `Customers` e na aba *Annotations* inclua a annotation `cds.persistence.table` na entidade. Consulte a [documentação](https://cap.cloud.sap/docs/cds/annotations#persistence) para saber mais sobre anotações que influenciam a persistência.
 <br>![Customer Persistance Annotation](/assets/4.0.1.customers-persistance-annotation.png)
 
 [Voltar para o Início](#build-extensions-with-sap-cloud-application-programming-model-cap)
@@ -960,6 +1022,8 @@ Content-Type: application/json
 Clique em `Send Request` acima da linha `POST .../Incidents`. Isso irá criar um novo registro como rascunho.
 
 Clique em `Send Request` acima da linha ``POST .../draftActivate``. isso corresponde à ação de salvar na UI.
+
+Esta segunda solicitação é necessária para todas as alterações em entidades gerenciadas pelo mecanismo [SAP Fiori Drafts](https://cap.cloud.sap/docs/advanced/fiori#draft-support).
 
 Nos logs da aplicação, será possível observar a linha `>> Updating customer` confirmando que a replicação aconteceu.
 
@@ -1087,7 +1151,7 @@ module.exports = {
 
 Mas quem é o emissor do evento? Geralmente é a fonte de dados remota, ou seja, o sistema SAP S4/HANA.
 
-Para execuções locais, seria ótimo se algo pudesse emitir eventos durante o teste. Felizmente, já existe um emissor de eventos simples no pacote de integração!
+Para execuções locais, seria ótimo se algo pudesse emitir eventos durante o teste. Felizmente, já existe um emissor de eventos simples no pacote de integração! Ele usa a [API `emit`](https://cap.cloud.sap/docs/node.js/core-services#srv-emit-event) para enviar um evento.
 
 Abra novamente o *File Editor* no menu esquerdo e abra o arquivo `node_modules/s4-bupa-integration/bupa/index.cds`. No aquivo será possível observar o seguinte código:
 ```

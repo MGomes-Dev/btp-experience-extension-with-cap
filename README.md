@@ -26,7 +26,7 @@
     [3.7 Testando com UI](#37-testando-com-ui)<p>
 [4. Lidando com Replicações e Eventos](#4-lidando-com-replicações-e-eventos)<br>
     [4.1 Replicando dados sob demanda](#41-replicando-dados-sob-demanda)<br>
-    [4.2 Testando replicação sob demanda](#42-testando-replicação-sob-demanda)<br>
+    [4.2 Testando replicação sob demanda](#42-testando-replicação-sob-demanda-sem-ui)<br>
     [4.3 Replicação de dados baseada em evento](#43-replicação-de-dados-baseada-em-evento)<br>
     [4.4 Reagindo a eventos](#44-reagindo-a-eventos)<br>
     [4.5 Emitindo eventos do servidor simulado](#45-emitindo-eventos-do-servidor-simulado)<br>
@@ -404,9 +404,11 @@ class ProcessorService extends LCAPApplicationService {
 
 Observe como o arquivo `js` tem o mesmo nome do arquivo `cds`. É assim que a estrutura encontra a implementação. Você pode ver isso na saída de `cds watch`, em que nos logs aparece a definição `impl`.
 
+```
 ...
 [cds] - serving ProcessorService { path: '/odata/v4/processor', impl: 'srv/processor-service.js' }
 ...
+```
 
 Agora você pode testar o funcionamento da lógica. Por meio da interface gráfica, crie um incidente com a palavra *urgent* no nome. O status automaticamente será definido como High.
 

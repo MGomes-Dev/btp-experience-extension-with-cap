@@ -379,7 +379,7 @@ Retorne à Fiori Preview e atualize a página. Repare que o título da coluna fo
 
 Agora, vamos adicionar uma regra de negócio para a aplicação. Vamos inserir uma funcionalidade em que, sempre que um incidente for criado com a palavra *urgent* no título, a sua urgência deve ser definida como "High".
 
-No *File Explorer* crie o arquivo `srv/service.js` e adiocine o seguinte código:
+No *File Explorer* crie o arquivo `srv/service.js` e adicione o seguinte código:
 
 ```
 const LCAPApplicationService = require('@sap/low-code-event-handler');
@@ -398,8 +398,14 @@ class ProcessorService extends LCAPApplicationService {
                 })
             }
         });
+
+        return super.init();
     }
 }
+
+module.exports = {
+    ProcessorService
+};
 ```
 
 Observe como o arquivo `js` tem o mesmo nome do arquivo `cds`. É assim que a estrutura encontra a implementação. Você pode ver isso na saída de `cds watch`, em que nos logs aparece a definição `impl`.
